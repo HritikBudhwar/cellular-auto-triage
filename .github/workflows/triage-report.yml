@@ -1,0 +1,17 @@
+name: triage-report
+on: [push, workflow_dispatch]
+jobs:
+  smoke-test-and-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      # Fast smoke test on synthetic traces (schema check + full pipeline)
+      - run: python make_sample_data.py sample_data && python nettriage.py sample_data --out output_sample
+      # Full report on the real UCC 5G dataset
+      - run: git clone --depth 1 https://github.com/uccmisl/5Gdataset.git data/5Gdataset
+      - run: python nettriage.py data/5Gdataset --out output
+      - uses: actions/upload-artifact@v4
+        with: { name: triage-report, path: output }
